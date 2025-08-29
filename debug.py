@@ -1,34 +1,45 @@
-from .db import Base, engine, Session, Category, Habit, Completion
-from .db.seed import seed_database
+from models import session, Category, Habit, Completion
+from crud import get_all_categories, get_all_habits, get_completions
+from datetime import date, timedelta
 
-def debug_database():
-    # Reset database
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
+def debug_info():
+    print("🐛 Debug Information")
+    print("=" * 50)
     
-    # Seed with sample data
-    seed_database()
-    
-    # Test queries
-    session = Session()
-    
-    print("\n=== Categories ===")
-    categories = session.query(Category).all()
+    categories = get_all_categories()
+    print(f"📂 Categories: {len(categories)}")
     for cat in categories:
-        print(f"{cat.id}: {cat.name}")
+        print(f"   {cat.id}: {cat.name}")
     
-    print("\n=== Habits ===")
-    habits = session.query(Habit).all()
+    habits = get_all_habits()
+    print(f"\n🌿 Habits: {len(habits)}")
     for habit in habits:
-        print(f"{habit.id}: {habit.name} (Streak: {habit.streak})")
+        completions = get_completions(habit.id)
+        print(f"   {habit.id}: {habit.name} (Streak: {habit.streak}, Completions: {len(completions)})")
     
-    print("\n=== Completions ===")
-    completions = session.query(Completion).limit(5).all()
-    for comp in completions:
-        print(f"Habit {comp.habit_id}: {comp.date}")
-    
-    session.close()
-    print("\n✅ Debug completed successfully!")
+    print(f"\n💾 Database: habit_tracker.db")
+    print("✅ Debug check complete!")
 
-if __name__ == '__main__':
-    debug_database()
+def test_operations():
+    print("\n🧪 Testing Operations")
+    print("=" * 50)
+    
+    try:
+        categories = get_all_categories()
+        print("✅ Categories query: OK")
+        
+        habits = get_all_habits()
+        print("✅ Habits query: OK")
+        
+        if habits:
+            streak = habits[0].streak
+            print("✅ Streak access: OK")
+        
+        print("✅ All tests passed!")
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+if __name__ == "__main__":
+    debug_info()
+    test_operations()

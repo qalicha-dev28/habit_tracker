@@ -3,42 +3,33 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import desc
 
 def create_category(name):
-    """Create a new category"""
     category = Category(name=name)
     session.add(category)
     session.commit()
     return category
 
 def get_all_categories():
-    """Get all categories"""
     return session.query(Category).all()
 
+def get_category_by_id(category_id):
+    return session.query(Category).filter(Category.id == category_id).first()
+
 def create_habit(name, description, category_id):
-    """Create a new habit"""
-    habit = Habit(
-        name=name, 
-        description=description, 
-        category_id=category_id
-    )
+    habit = Habit(name=name, description=description, category_id=category_id)
     session.add(habit)
     session.commit()
     return habit
 
 def get_all_habits():
-    """Get all habits"""
     return session.query(Habit).all()
 
 def get_habits_by_category(category_id):
-    """Get habits by category"""
     return session.query(Habit).filter(Habit.category_id == category_id).all()
 
 def get_habit_by_id(habit_id):
-    """Get a habit by ID"""
     return session.query(Habit).filter(Habit.id == habit_id).first()
 
 def log_completion(habit_id, notes=None):
-    """Log a completion for a habit"""
-    # Check if already completed today
     today = date.today()
     existing_completion = session.query(Completion).filter(
         Completion.habit_id == habit_id,
@@ -46,21 +37,14 @@ def log_completion(habit_id, notes=None):
     ).first()
     
     if existing_completion:
-        return None  # Already completed today
+        return None
     
-    completion = Completion(
-        habit_id=habit_id,
-        date=today,
-        notes=notes
-    )
-    
+    completion = Completion(habit_id=habit_id, date=today, notes=notes)
     session.add(completion)
     
-    # Update streak
     habit = get_habit_by_id(habit_id)
     yesterday = today - timedelta(days=1)
     
-    # Check if there was a completion yesterday
     yesterday_completion = session.query(Completion).filter(
         Completion.habit_id == habit_id,
         Completion.date == yesterday
@@ -69,19 +53,24 @@ def log_completion(habit_id, notes=None):
     if yesterday_completion:
         habit.streak += 1
     else:
-        # If no completion yesterday, reset streak to 1
         habit.streak = 1
     
     session.commit()
     return completion
 
 def get_completions(habit_id):
-    """Get all completions for a habit"""
     return session.query(Completion).filter(
         Completion.habit_id == habit_id
     ).order_by(desc(Completion.date)).all()
 
 def get_habit_streak(habit_id):
-    """Get the current streak for a habit"""
     habit = get_habit_by_id(habit_id)
     return habit.streak if habit else 0
+
+def get_today_completions():
+    today = date.today()
+    return session.query(Completion).filter(Completion.date == today).all()
+
+def get_longest_streak():
+    habits = session.query(Habit).order_by(desc(Habit.streak)).all()
+    return habits[0] if habits else None
